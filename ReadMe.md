@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/notchnook-icon-removebg-preview.png)" alt="NotchTub logo" width="128">
+  <img src=".github/assets/notchnook-icon-removebg-preview.png" alt="NotchTub logo" width="128">
 </p>
 <h1 align="center">NotchTub</h1>
 <p align="center">
