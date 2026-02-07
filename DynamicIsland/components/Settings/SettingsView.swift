@@ -2397,6 +2397,7 @@ struct CalendarSettings: View {
 struct About: View {
     @State private var showBuildNumber: Bool = false
     @Environment(\.openWindow) var openWindow
+    @Environment(\.colorScheme) var colorScheme
     
     private var chipModelName: String {
         var size: size_t = 0
@@ -2412,115 +2413,118 @@ struct About: View {
         return "Apple Silicon"
     }
     
+    private var macOSVersion: String {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return "macOS \(version.majorVersion).\(version.minorVersion)"
+    }
+    
     var body: some View {
-        VStack(spacing: 0) {
-            Form {
-                Section {
-                    HStack {
-                        Text("Release name")
-                        Spacer()
-                        Text(Defaults[.releaseName])
-                            .foregroundStyle(.secondary)
+        Form {
+            // Header Section - Mimics "About This Mac" top area
+            Section {
+                VStack(spacing: 16) {
+                    if let appIcon = NSApp.applicationIconImage {
+                        Image(nsImage: appIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 128, height: 128)
                     }
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        if showBuildNumber {
-                            Text("(\(Bundle.main.buildVersionNumber ?? ""))")
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(Bundle.main.releaseVersionNumber ?? "unknown")
+                    
+                    VStack(spacing: 4) {
+                        Text("NotchTub")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundStyle(.primary)
+                        
+                        Text("Version \(Bundle.main.releaseVersionNumber ?? "1.0")")
+                            .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.secondary)
+                        
+                        if showBuildNumber {
+                            Text("Build \(Bundle.main.buildVersionNumber ?? "1")")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                     .onTapGesture {
                         withAnimation {
                             showBuildNumber.toggle()
                         }
                     }
-                } header: {
-                    Text("Version info")
-                }
-            }
-            
-            // Branding Panel (below Version info)
-            VStack(spacing: 16) {
-                // App Name and Chip Badge Row
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("NotchApp")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.primary)
-                        
-                        Text("Dynamic Island")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.cyan)
-                    }
                     
-                    Spacer()
-                    
-                    // Apple Silicon Chip Badge
+                    // Chip Badge
                     HStack(spacing: 6) {
                         Image(systemName: "apple.logo")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 12))
                         Text(chipModelName)
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(NSColor.controlBackgroundColor))
+                        Capsule()
+                            .fill(Color.primary.opacity(0.05))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
+                                Capsule()
                                     .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                             )
                     )
+                    .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .listRowBackground(Color.clear) // Transparent background for header
+            }
+            
+            // Details Section
+            Section {
+                HStack {
+                    Text("System")
+                    Spacer()
+                    Text(macOSVersion)
+                        .foregroundStyle(.secondary)
                 }
                 
-                // Made for Apple Silicon Row
-                HStack(spacing: 8) {
-                    Image(systemName: "cpu")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                    
-                    Text("Made for Apple Silicon by srg-sphynx")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    
+                HStack {
+                    Text("Release")
                     Spacer()
+                    Text(Defaults[.releaseName])
+                        .foregroundStyle(.secondary)
                 }
                 
-                // Ready Status Row
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.green)
-                    
-                    Text("Ready")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.green)
-                    
+                HStack {
+                    Text("Developer")
                     Spacer()
+                    Text("srg-sphynx")
+                        .foregroundStyle(.secondary)
+                }
+                
+                HStack {
+                    Text("License")
+                    Spacer()
+                    Text("GPL-3.0")
+                        .foregroundStyle(.secondary)
                 }
             }
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                    )
-            )
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 20)
             
-            Spacer()
+            // Branding/Footer
+            Section {
+                HStack {
+                    Spacer()
+                    VStack(spacing: 4) {
+                        Text("Made for Apple Silicon")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        Text("Designed with AntiGravity by VibeCoding")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowBackground(Color.clear)
         }
+        .formStyle(.grouped) // Use grouped style for standard settings look
         .navigationTitle("About")
     }
 }
