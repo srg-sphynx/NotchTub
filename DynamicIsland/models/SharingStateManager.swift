@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +25,7 @@ import Combine
 import Foundation
 
 extension Notification.Name {
-	static let sharingDidFinish = Notification.Name("com.notchapp.sharingDidFinish")
+	static let sharingDidFinish = Notification.Name("com.ebullioscopic.sharingDidFinish")
 }
 
 @MainActor

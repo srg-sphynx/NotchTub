@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +78,28 @@ class MusicManager: ObservableObject {
     @Published var isPlaying = false
     @Published var album: String = "Self Love"
     @Published var isPlayerIdle: Bool = true
+
+    /// Whether there is an active music session with real metadata.
+    /// Returns `false` only when the metadata is still placeholder/fallback defaults
+    /// (i.e. nothing has been played since app launch, or the controller returned
+    /// unknown/not-playing placeholders). Paused music with real metadata is still
+    /// considered an active session.
+    private static let placeholderTitles: Set<String> = [
+        "i'm handsome", "unknown", "not playing"
+    ]
+    private static let placeholderArtists: Set<String> = [
+        "me", "unknown"
+    ]
+
+    var hasActiveSession: Bool {
+        if isPlaying { return true }
+        let trimmedTitle = songTitle.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let trimmedArtist = artistName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let hasRealTitle = !trimmedTitle.isEmpty && !Self.placeholderTitles.contains(trimmedTitle)
+        let hasRealArtist = !trimmedArtist.isEmpty && !Self.placeholderArtists.contains(trimmedArtist)
+        return hasRealTitle || hasRealArtist
+    }
+
     @Published var animations: DynamicIslandAnimations = .init()
     @Published var avgColor: NSColor = .white
     @Published var bundleIdentifier: String? = nil
@@ -112,7 +137,9 @@ class MusicManager: ObservableObject {
     private var lastArtworkBundleIdentifier: String? = nil
 
     @Published var flipAngle: Double = 0
+    @Published var lastFlipDirection: SkipDirection = .forward
     private let flipAnimationDuration: TimeInterval = 0.45
+    private var flipCooldownActive: Bool = false
 
     @Published var isTransitioning: Bool = false
     private var transitionWorkItem: DispatchWorkItem?
@@ -355,8 +382,22 @@ class MusicManager: ObservableObject {
     }
 
     private func triggerFlipAnimation() {
+        // Debounce: rapid metadata updates (title, artwork, bundle arriving
+        // separately for one track change) should only produce a single flip.
+        guard !flipCooldownActive else { return }
+        flipCooldownActive = true
+
+        // Direction: positive rotation = next (page turn forward),
+        //            negative rotation = previous (page turn backward).
+        let delta: Double = lastFlipDirection == .forward ? 180 : -180
         withAnimation(.easeInOut(duration: flipAnimationDuration)) {
-            flipAngle += 180
+            flipAngle += delta
+        }
+
+        // Reset cooldown after the animation completes so the next
+        // genuine track change can flip again.
+        DispatchQueue.main.asyncAfter(deadline: .now() + flipAnimationDuration + 0.15) { [weak self] in
+            self?.flipCooldownActive = false
         }
     }
 
@@ -599,8 +640,10 @@ class MusicManager: ObservableObject {
         switch behavior {
         case .track:
             if direction == .forward {
+                lastFlipDirection = .forward
                 nextTrack()
             } else {
+                lastFlipDirection = .backward
                 previousTrack()
             }
         case .tenSecond:
@@ -907,24 +950,29 @@ extension MusicManager {
 private struct AlbumArtFlipModifier: ViewModifier {
     let angle: Double
 
-    private var normalizedAngle: Double {
-        var value = angle.truncatingRemainder(dividingBy: 360)
-        if value < 0 { value += 360 }
-        return value
-    }
-
-    private var mirrorScale: CGFloat {
-        (normalizedAngle > 90 && normalizedAngle < 270) ? -1 : 1
-    }
-
     func body(content: Content) -> some View {
         content
             .rotation3DEffect(
                 .degrees(angle),
                 axis: (x: 0, y: 1, z: 0),
-                perspective: 0.65
+                anchor: .center,
+                anchorZ: 0,
+                perspective: 0.5
             )
-            .scaleEffect(x: mirrorScale, y: 1)
+            // Counter-rotate the content so the image never appears mirrored.
+            // At odd multiples of 180° the 3D rotation mirrors along X;
+            // applying an opposite scaleEffect cancels that out.
+            .scaleEffect(x: cosineSign(for: angle), y: 1)
+    }
+
+    /// Returns +1 when the front face is showing, −1 when the back face is showing.
+    private func cosineSign(for degrees: Double) -> CGFloat {
+        let cos = Darwin.cos(degrees * .pi / 180)
+        // Use a small tolerance to avoid flickering exactly at 90°/270°.
+        if cos > 0.001 { return 1 }
+        if cos < -0.001 { return -1 }
+        // At the exact edge, prefer the side we're animating toward.
+        return degrees.truncatingRemainder(dividingBy: 360) >= 0 ? -1 : 1
     }
 }
 

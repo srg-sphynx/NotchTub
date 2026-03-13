@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +41,7 @@ struct FileShareView: View {
     var body: some View {
         dropArea
             .background(NSViewHost(view: $hostView))
+            .onAppear { quickShare.ensureDiscovered() }
             .onDrop(of: [.fileURL, .url, .utf8PlainText, .plainText, .data, .image], isTargeted: $vm.dropZoneTargeting) { providers in
                 interactionNonce = .init()
                 vm.dropEvent = true

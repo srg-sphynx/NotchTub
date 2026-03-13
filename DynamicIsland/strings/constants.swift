@@ -18,11 +18,7 @@
 
 import Foundation
 
-// External URLs disabled for local-only mode
-// To re-enable, uncomment and update with your own URLs
-// let productPage = URL(string: "https://github.com/YourUsername/NotchTub")!
-// let sponsorPage = URL(string: "https://your-sponsor-page.com")!
+let productPage = URL(string: "https://github.com/Ebullioscopic/DynamicIsland")!
+let sponsorPage = URL(string: "https://www.buymeacoffee.com/kryoscopic")!
 
-// Placeholder URLs that won't be accessed (used to prevent compile errors)
-let productPage = URL(string: "about:blank")!
-let sponsorPage = URL(string: "about:blank")!
+

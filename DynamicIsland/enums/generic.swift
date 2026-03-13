@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +29,36 @@ public enum Style {
     case floating
 }
 
+/// Controls how NotchTub renders on external and non-notched displays.
+/// - `notch`: Standard notch shape (concave top corners blending into the screen edge).
+/// - `dynamicIsland`: Pill-shaped island with continuously rounded corners,
+///   inspired by DynamicNotchKit's floating style. Only applies to screens
+///   that do NOT have a physical notch.
+enum ExternalDisplayStyle: String, CaseIterable, Defaults.Serializable, Identifiable {
+    case notch = "Standard Notch"
+    case dynamicIsland = "Dynamic Island"
+
+    var id: String { rawValue }
+
+    var localizedName: String {
+        switch self {
+        case .notch:
+            return String(localized: "Standard Notch")
+        case .dynamicIsland:
+            return String(localized: "Dynamic Island")
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .notch:
+            return String(localized: "Classic notch shape that blends into the top screen edge")
+        case .dynamicIsland:
+            return String(localized: "Pill-shaped island with rounded corners, similar to iPhone's Dynamic Island")
+        }
+    }
+}
+
 public enum ContentType: Int, Codable, Hashable, Equatable {
     case normal
     case menu
@@ -45,6 +78,7 @@ public enum NotchViews {
     case colorPicker
     case notes
     case clipboard
+    case terminal
     case extensionExperience
 }
 
@@ -80,6 +114,17 @@ enum DownloadIndicatorStyle: String, Defaults.Serializable {
     case progress = "Progress"
     case percentage = "Percentage"
     case circle = "Circle"
+    
+    var localizedName: String {
+        switch self {
+            case .progress:
+                return String(localized: "Progress")
+            case .percentage:
+                return String(localized: "Percentage")
+            case .circle:
+                return String(localized: "Circle")
+        }
+    }
 }
 
 enum DownloadIconStyle: String, Defaults.Serializable {
@@ -103,13 +148,33 @@ enum SliderColorEnum: String, CaseIterable, Defaults.Serializable {
     case white = "White"
     case albumArt = "Match album art"
     case accent = "Accent color"
+    
+    var localizedName: String {
+        switch self {
+            case .white:
+                return String(localized: "Standard")
+            case .albumArt:
+                return String(localized: "Custom Liquid")
+            case .accent:
+            return String(localized: "Accent color")
+        }
+    }
 }
 
 enum LockScreenGlassStyle: String, CaseIterable, Defaults.Serializable, Identifiable {
     case liquid = "Liquid Glass"
     case frosted = "Frosted Glass"
-
+    
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .liquid:
+            return String(localized: "Liquid Glass")
+        case .frosted:
+            return String(localized: "Frosted Glass")
+        }
+    }
 }
 
 enum LockScreenGlassCustomizationMode: String, CaseIterable, Defaults.Serializable, Identifiable {
@@ -121,6 +186,15 @@ enum LockScreenGlassCustomizationMode: String, CaseIterable, Defaults.Serializab
     var allowsVariantSelection: Bool {
         self == .customLiquid
     }
+    
+    var localizedName: String {
+        switch self {
+            case .standard:
+                return String(localized: "Standard")
+            case .customLiquid:
+                return String(localized: "Custom Liquid")
+        }
+    }
 }
 
 enum LockScreenTimerSurfaceMode: String, CaseIterable, Defaults.Serializable, Identifiable {
@@ -128,6 +202,15 @@ enum LockScreenTimerSurfaceMode: String, CaseIterable, Defaults.Serializable, Id
     case glass = "Glass"
 
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .classic:
+            return String(localized: "Classic")
+        case .glass:
+            return String(localized: "Glass")
+        }
+    }
 }
 
 enum LockScreenWeatherWidgetStyle: String, CaseIterable, Defaults.Serializable, Identifiable {
@@ -135,6 +218,15 @@ enum LockScreenWeatherWidgetStyle: String, CaseIterable, Defaults.Serializable, 
     case circular = "Circular"
 
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .inline:
+            return String(localized: "Inline")
+        case .circular:
+            return String(localized: "Circular")
+        }
+    }
 }
 
 enum LockScreenWeatherProviderSource: String, CaseIterable, Defaults.Serializable, Identifiable {
@@ -189,18 +281,18 @@ enum LockScreenWeatherAirQualityScale: String, CaseIterable, Defaults.Serializab
     var compactLabel: String {
         switch self {
         case .us:
-            return "AQI"
+            return String(localized: "AQI")
         case .european:
-            return "EAQI"
+            return String(localized: "EAQI")
         }
     }
 
     var accessibilityLabel: String {
         switch self {
         case .us:
-            return "AQI"
+            return String(localized: "AQI")
         case .european:
-            return "EAQI"
+            return String(localized: "EAQI")
         }
     }
 
@@ -228,4 +320,13 @@ enum LockScreenReminderChipStyle: String, CaseIterable, Defaults.Serializable, I
     case monochrome = "White"
 
     var id: String { rawValue }
+    
+    var localizedName: String {
+            switch self {
+            case .eventColor:
+                return String(localized: "Event color")
+            case .monochrome:
+                return String(localized: "White")
+            }
+        }
 }

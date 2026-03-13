@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -260,9 +263,9 @@ enum ClipboardDisplayMode: String, CaseIterable, Codable, Defaults.Serializable 
     
     var displayName: String {
         switch self {
-        case .popover: return "Popover"
-        case .panel: return "Panel"
-        case .separateTab: return "Separate Tab"
+        case .popover: return String(localized: "Popover")
+        case .panel: return String(localized: "Panel")
+        case .separateTab: return String(localized: "Separate Tab")
         }
     }
     
@@ -281,15 +284,15 @@ enum ScreenAssistantDisplayMode: String, CaseIterable, Codable, Defaults.Seriali
     
     var displayName: String {
         switch self {
-        case .popover: return "Popover"
-        case .panel: return "Panel"
+        case .popover: return String(localized: "Popover")
+        case .panel: return String(localized: "Panel")
         }
     }
     
     var description: String {
         switch self {
-        case .popover: return "Shows screen assistant as a dropdown attached to the AI button"
-        case .panel: return "Shows screen assistant in a floating panel near the notch"
+        case .popover: return String(localized: "Shows screen assistant as a dropdown attached to the AI button")
+        case .panel: return String(localized: "Shows screen assistant in a floating panel near the notch")
         }
     }
 }
@@ -332,6 +335,15 @@ enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializa
     case youtubeMusic = "Youtube Music"
     
     var id: String { self.rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .nowPlaying: return String(localized: "Now Playing")
+        case .appleMusic: return String(localized: "Apple Music")
+        case .spotify: return String(localized: "Spotify")
+        case .youtubeMusic: return String(localized: "Youtube Music")
+        }
+    }
 }
 
 // Sneak peek styles for selection in settings
@@ -340,6 +352,13 @@ enum SneakPeekStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
     case inline = "Inline"
     
     var id: String { self.rawValue }
+    
+    var LocalizedName : String {
+        switch self {
+        case .standard: return String(localized: "Default")
+        case .inline: return String(localized: "Inline")
+        }
+    }
 }
 
 enum CapsLockIndicatorTintMode: String, CaseIterable, Identifiable, Defaults.Serializable {
@@ -352,11 +371,11 @@ enum CapsLockIndicatorTintMode: String, CaseIterable, Identifiable, Defaults.Ser
     var displayName: String {
         switch self {
         case .green:
-            return "Green"
+            return String(localized: "Green")
         case .accent:
-            return "Accent"
+            return String(localized: "Accent")
         case .white:
-            return "White"
+            return String(localized: "White")
         }
     }
 
@@ -435,18 +454,18 @@ enum MusicSkipBehavior: String, CaseIterable, Identifiable, Defaults.Serializabl
     var displayName: String {
         switch self {
         case .track:
-            return "Track Skip"
+            return String(localized: "Track Skip")
         case .tenSecond:
-            return "±10 Seconds"
+            return String(localized: "±10 Seconds")
         }
     }
 
     var description: String {
         switch self {
         case .track:
-            return "Standard previous/next track controls"
+            return String(localized: "Standard previous/next track controls")
         case .tenSecond:
-            return "Skip forward or backward by ten seconds"
+            return String(localized: "Skip forward or backward by ten seconds")
         }
     }
 }
@@ -459,8 +478,8 @@ enum TimerIconColorMode: String, CaseIterable, Identifiable, Defaults.Serializab
     
     var displayName: String {
         switch self {
-        case .adaptive: return "Adaptive gradient"
-        case .solid: return "Solid colour"
+        case .adaptive: return String(localized:"Adaptive gradient")
+        case .solid: return String(localized:"Solid colour")
         }
     }
 }
@@ -470,6 +489,29 @@ enum TimerProgressStyle: String, CaseIterable, Identifiable, Defaults.Serializab
     case ring = "Ring"
     
     var id: String { rawValue }
+    
+    var localizedName: String {
+        switch self {
+        case .bar: return String(localized:"Bar")
+        case .ring: return String(localized:"Ring")
+        }
+    }
+}
+
+enum FocusMonitoringMode: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case withoutDevTools = "withoutDevTools"
+    case useDevTools = "useDevTools"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .withoutDevTools:
+            return "Use without DevTools"
+        case .useDevTools:
+            return "Use DevTools"
+        }
+    }
 }
 
 enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
@@ -481,9 +523,12 @@ enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Ser
 
     var displayName: String {
         switch self {
-        case .ringCountdown: return "Ring"
-        case .digital: return "Digital"
-        case .minutes: return "Minutes"
+            case .ringCountdown:
+                return String(localized: "Ring")
+            case .digital:
+                return String(localized: "Digital")
+            case .minutes:
+                return String(localized: "Minutes")
         }
     }
 }
@@ -646,7 +691,7 @@ extension Defaults.Keys {
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
     static let showOnAllDisplays = Key<Bool>("showOnAllDisplays", default: false)
     static let automaticallySwitchDisplay = Key<Bool>("automaticallySwitchDisplay", default: true)
-    static let releaseName = Key<String>("releaseName", default: "NotchTub V1.2")
+    static let releaseName = Key<String>("releaseName", default: "Seychelles")
     static let hideDynamicIslandFromScreenCapture = Key<Bool>("hideDynamicIslandFromScreenCapture", default: false)
     
         // MARK: Behavior
@@ -654,6 +699,11 @@ extension Defaults.Keys {
     static let enableHaptics = Key<Bool>("enableHaptics", default: true)
     static let openNotchOnHover = Key<Bool>("openNotchOnHover", default: true)
 	static let extendHoverArea = Key<Bool>("extendHoverArea", default: false)
+    static let externalDisplayStyle = Key<ExternalDisplayStyle>(
+        "externalDisplayStyle",
+        default: .notch
+    )
+    static let hideNonNotchUntilHover = Key<Bool>("hideNonNotchUntilHover", default: false)
     static let notchHeightMode = Key<WindowHeightMode>(
         "notchHeightMode",
         default: WindowHeightMode.matchRealNotchSize
@@ -721,7 +771,6 @@ extension Defaults.Keys {
     static let didMigrateMusicAuxControls = Key<Bool>("didMigrateMusicAuxControls", default: false)
     static let musicControlSlots = Key<[MusicControlButton]>("musicControlSlots", default: MusicControlButton.defaultLayout)
     static let didMigrateMusicControlSlots = Key<Bool>("didMigrateMusicControlSlots", default: false)
-    static let didMigrateToAppleMusicDefault = Key<Bool>("didMigrateToAppleMusicDefault", default: false)
     static let musicSkipBehavior = Key<MusicSkipBehavior>("musicSkipBehavior", default: .track)
     static let musicControlWindowEnabled = Key<Bool>("musicControlWindowEnabled", default: false)
     static let showStandardMediaControls = Key<Bool>("showStandardMediaControls", default: true)
@@ -737,7 +786,7 @@ extension Defaults.Keys {
     static let lockScreenWeatherRefreshInterval = Key<TimeInterval>("lockScreenWeatherRefreshInterval", default: 30 * 60)
     static let lockScreenWeatherShowsLocation = Key<Bool>("lockScreenWeatherShowsLocation", default: true)
     static let lockScreenWeatherShowsSunrise = Key<Bool>("lockScreenWeatherShowsSunrise", default: true)
-    static let lockScreenWeatherWidgetStyle = Key<LockScreenWeatherWidgetStyle>("lockScreenWeatherWidgetStyle", default: .circular)
+    static let lockScreenWeatherWidgetStyle = Key<LockScreenWeatherWidgetStyle>("lockScreenWeatherWidgetStyle", default: .inline)
     static let lockScreenWeatherTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("lockScreenWeatherTemperatureUnit", default: .celsius)
     static let lockScreenWeatherShowsAQI = Key<Bool>("lockScreenWeatherShowsAQI", default: true)
     static let lockScreenWeatherAQIScale = Key<LockScreenWeatherAirQualityScale>("lockScreenWeatherAQIScale", default: .us)
@@ -745,10 +794,10 @@ extension Defaults.Keys {
     static let lockScreenWeatherProviderSource = Key<LockScreenWeatherProviderSource>("lockScreenWeatherProviderSource", default: .openMeteo)
     static let lockScreenWeatherVerticalOffset = Key<Double>("lockScreenWeatherVerticalOffset", default: 0)
     static let lockScreenMusicVerticalOffset = Key<Double>("lockScreenMusicVerticalOffset", default: 0)
-    static let lockScreenMusicPanelWidth = Key<Double>("lockScreenMusicPanelWidth", default: 420)
+    static let lockScreenMusicPanelWidth = Key<Double>("lockScreenMusicPanelWidth", default: 350)
     static let lockScreenMusicAlbumParallaxEnabled = Key<Bool>("lockScreenMusicAlbumParallaxEnabled", default: false)
     static let lockScreenTimerVerticalOffset = Key<Double>("lockScreenTimerVerticalOffset", default: 0)
-    static let lockScreenTimerWidgetWidth = Key<Double>("lockScreenTimerWidgetWidth", default: 420)
+    static let lockScreenTimerWidgetWidth = Key<Double>("lockScreenTimerWidgetWidth", default: 350)
     static let lockScreenGlassStyle = Key<LockScreenGlassStyle>("lockScreenGlassStyle", default: .liquid)
     static let lockScreenGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
         "lockScreenGlassCustomizationMode",
@@ -772,6 +821,19 @@ extension Defaults.Keys {
     static let lockScreenPanelUsesBlur = Key<Bool>("lockScreenPanelUsesBlur", default: true)
     static let lockScreenTimerWidgetUsesBlur = Key<Bool>("lockScreenTimerWidgetUsesBlur", default: false)
     static let lockScreenReminderChipStyle = Key<LockScreenReminderChipStyle>("lockScreenReminderChipStyle", default: .eventColor)
+    static let lockScreenReminderWidgetHorizontalAlignment = Key<String>("lockScreenReminderWidgetHorizontalAlignment", default: "center")
+    static let lockScreenReminderWidgetVerticalOffset = Key<Double>("lockScreenReminderWidgetVerticalOffset", default: 0)
+    static let lockScreenShowCalendarEvent = Key<Bool>("lockScreenShowCalendarEvent", default: true)
+    static let lockScreenCalendarEventLookaheadWindow = Key<String>("lockScreenCalendarEventLookaheadWindow", default: "3h")
+    static let lockScreenCalendarSelectionMode = Key<String>("lockScreenCalendarSelectionMode", default: "all")
+    static let lockScreenSelectedCalendarIDs = Key<Set<String>>("lockScreenSelectedCalendarIDs", default: [])
+    static let lockScreenShowCalendarCountdown = Key<Bool>("lockScreenShowCalendarCountdown", default: true)
+    static let lockScreenShowCalendarEventEntireDuration = Key<Bool>("lockScreenShowCalendarEventEntireDuration", default: true)
+    static let lockScreenShowCalendarEventAfterStartEnabled = Key<Bool>("lockScreenShowCalendarEventAfterStartEnabled", default: false)
+    static let lockScreenShowCalendarEventAfterStartWindow = Key<String>("lockScreenShowCalendarEventAfterStartWindow", default: "5m")
+    static let lockScreenShowCalendarTimeRemaining = Key<Bool>("lockScreenShowCalendarTimeRemaining", default: true)
+    static let lockScreenShowCalendarStartTimeAfterBegins = Key<Bool>("lockScreenShowCalendarStartTimeAfterBegins", default: true)
+    static let lockScreenWeatherWidgetRowOrder = Key<String>("lockScreenWeatherWidgetRowOrder", default: "weather_calendar_focus")
     
         // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)
@@ -836,17 +898,35 @@ extension Defaults.Keys {
     static let useCircularBluetoothBatteryIndicator = Key<Bool>("useCircularBluetoothBatteryIndicator", default: true)
     static let showBluetoothBatteryPercentageText = Key<Bool>("showBluetoothBatteryPercentageText", default: false)
     static let showBluetoothDeviceNameMarquee = Key<Bool>("showBluetoothDeviceNameMarquee", default: false)
+    static let useBluetoothHUD3DIcon = Key<Bool>("useBluetoothHUD3DIcon", default: true)
     
     // MARK: Stats Feature
     static let enableStatsFeature = Key<Bool>("enableStatsFeature", default: false)
     static let autoStartStatsMonitoring = Key<Bool>("autoStartStatsMonitoring", default: true)
-    static let statsStopWhenNotchCloses = Key<Bool>("statsStopWhenNotchCloses", default: false)
+    static let statsStopWhenNotchCloses = Key<Bool>("statsStopWhenNotchCloses", default: true)
     static let statsUpdateInterval = Key<Double>("statsUpdateInterval", default: 1.0)
     static let showCpuGraph = Key<Bool>("showCpuGraph", default: true)
     static let showMemoryGraph = Key<Bool>("showMemoryGraph", default: true)
     static let showGpuGraph = Key<Bool>("showGpuGraph", default: true)
     static let showNetworkGraph = Key<Bool>("showNetworkGraph", default: false)
     static let showDiskGraph = Key<Bool>("showDiskGraph", default: false)
+    static let cpuTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("cpuTemperatureUnit", default: .celsius)
+    
+    // MARK: Terminal Feature
+    static let enableTerminalFeature = Key<Bool>("enableTerminalFeature", default: false)
+    static let terminalShellPath = Key<String>("terminalShellPath", default: "/bin/zsh")
+    static let terminalFontSize = Key<Double>("terminalFontSize", default: 12.0)
+    static let terminalOpacity = Key<Double>("terminalOpacity", default: 1.0)
+    static let terminalMaxHeightFraction = Key<Double>("terminalMaxHeightFraction", default: 0.4)
+    static let terminalCursorStyle = Key<String>("terminalCursorStyle", default: "blinkBlock")
+    static let terminalScrollbackLines = Key<Int>("terminalScrollbackLines", default: 1000)
+    static let terminalOptionAsMeta = Key<Bool>("terminalOptionAsMeta", default: true)
+    static let terminalMouseReporting = Key<Bool>("terminalMouseReporting", default: true)
+    static let terminalBoldAsBright = Key<Bool>("terminalBoldAsBright", default: true)
+    static let terminalBackgroundColor = Key<Color>("terminalBackgroundColor", default: .black)
+    static let terminalForegroundColor = Key<Color>("terminalForegroundColor", default: .white)
+    static let terminalCursorColor = Key<Color>("terminalCursorColor", default: Color(.selectedControlColor))
+    static let terminalStickyMode = Key<Bool>("terminalStickyMode", default: false)
     
     // MARK: Timer Feature
     static let enableTimerFeature = Key<Bool>("enableTimerFeature", default: true)
@@ -931,18 +1011,38 @@ extension Defaults.Keys {
     static let verticalHUDWidth = Key<CGFloat>("verticalHUDWidth", default: 36)
     static let verticalHUDPadding = Key<CGFloat>("verticalHUDPadding", default: 24)
     static let verticalHUDUseAccentColor = Key<Bool>("verticalHUDUseAccentColor", default: false)
+    static let verticalHUDMaterial = Key<OSDMaterial>("verticalHUDMaterial", default: .frosted)
+    static let verticalHUDLiquidGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "verticalHUDLiquidGlassCustomizationMode",
+        default: .standard
+    )
+    static let verticalHUDLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "verticalHUDLiquidGlassVariant",
+        default: .defaultVariant
+    )
     
     // Circular HUD Customization
     static let circularHUDShowValue = Key<Bool>("circularHUDShowValue", default: true)
     static let circularHUDSize = Key<CGFloat>("circularHUDSize", default: 65)
     static let circularHUDStrokeWidth = Key<CGFloat>("circularHUDStrokeWidth", default: 4)
     static let circularHUDUseAccentColor = Key<Bool>("circularHUDUseAccentColor", default: true)
+
+    // MARK: BetterDisplay Integration
+    static let enableBetterDisplayIntegration = Key<Bool>("enableBetterDisplayIntegration", default: false)
     
     static let hasSeenOSDAlphaWarning = Key<Bool>("hasSeenOSDAlphaWarning", default: false)
     static let enableOSDVolume = Key<Bool>("enableOSDVolume", default: true)
     static let enableOSDBrightness = Key<Bool>("enableOSDBrightness", default: true)
     static let enableOSDKeyboardBacklight = Key<Bool>("enableOSDKeyboardBacklight", default: true)
     static let osdMaterial = Key<OSDMaterial>("osdMaterial", default: .frosted)
+    static let osdLiquidGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "osdLiquidGlassCustomizationMode",
+        default: .standard
+    )
+    static let osdLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "osdLiquidGlassVariant",
+        default: .defaultVariant
+    )
     static let osdIconColorStyle = Key<OSDIconColorStyle>("osdIconColorStyle", default: .white)
     
     // MARK: Screen Recording Detection Feature
@@ -953,6 +1053,7 @@ extension Defaults.Keys {
 
     // MARK: Focus / Do Not Disturb Detection
     static let enableDoNotDisturbDetection = Key<Bool>("enableDoNotDisturbDetection", default: true)
+    static let focusMonitoringMode = Key<FocusMonitoringMode>("focusMonitoringMode", default: .withoutDevTools)
     static let showDoNotDisturbIndicator = Key<Bool>("showDoNotDisturbIndicator", default: true)
     static let showDoNotDisturbLabel = Key<Bool>("showDoNotDisturbLabel", default: true)
     static let focusIndicatorNonPersistent = Key<Bool>("focusIndicatorNonPersistent", default: false)
@@ -970,7 +1071,7 @@ extension Defaults.Keys {
     static let capsLockIndicatorUseGreenColor = Key<Bool>("capsLockIndicatorUseGreenColor", default: false) // Legacy toggle
     static let capsLockIndicatorTintMode = Key<CapsLockIndicatorTintMode>("capsLockIndicatorTintMode", default: .white)
     static let didMigrateCapsLockTintMode = Key<Bool>("didMigrateCapsLockTintMode", default: false)
-    static let showCapsLockLabel = Key<Bool>("showCapsLockLabel", default: true)
+    static let showCapsLockLabel = Key<Bool>("showCapsLockLabel", default: false)
     
     // MARK: ImageService
     static let didClearLegacyURLCacheV1 = Key<Bool>("didClearLegacyURLCacheV1", default: false)
@@ -979,7 +1080,7 @@ extension Defaults.Keys {
     static let enableMinimalisticUI = Key<Bool>("enableMinimalisticUI", default: false)
     
     // MARK: Lyrics Feature
-    static let enableLyrics = Key<Bool>("enableLyrics", default: true)
+    static let enableLyrics = Key<Bool>("enableLyrics", default: false)
     
     // MARK: Notes Feature
     static let enableNotes = Key<Bool>("enableNotes", default: false)
@@ -992,8 +1093,11 @@ extension Defaults.Keys {
     
     // Helper to determine the default media controller based on macOS version
     static var defaultMediaController: MediaControllerType {
-        // Default to Apple Music for reliable album art
-        return .appleMusic
+        if #available(macOS 15.4, *) {
+            return .appleMusic
+        } else {
+            return .nowPlaying
+        }
     }
     
     // Migration helper to convert from legacy enableGradient Boolean to new ProgressBarStyle enum
@@ -1054,16 +1158,5 @@ extension Defaults.Keys {
         let current = Defaults[.musicAuxLeftControl]
         let fallback = MusicAuxiliaryControl.alternative(excluding: current)
         Defaults[.musicAuxRightControl] = fallback
-    }
-
-    static func migrateToAppleMusicDefault() {
-        guard Defaults[.didMigrateToAppleMusicDefault] == false else { return }
-
-        // Migration for Beta 1: Switch to Apple Music controller for reliable artwork
-        if Defaults[.mediaController] == .nowPlaying {
-            Defaults[.mediaController] = .appleMusic
-        }
-
-        Defaults[.didMigrateToAppleMusicDefault] = true
     }
 }

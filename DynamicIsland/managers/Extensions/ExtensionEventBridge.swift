@@ -18,7 +18,7 @@
 
 import Foundation
 
-/// Bridges extension payload updates between NotchApp processes (main app, helpers, XPC services).
+/// Bridges extension payload updates between Atoll processes (main app, helpers, XPC services).
 /// Stores the latest snapshot on disk and delivers change notifications through DistributedNotificationCenter.
 final class ExtensionEventBridge {
     static let shared = ExtensionEventBridge()
@@ -27,7 +27,7 @@ final class ExtensionEventBridge {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
     private let processIdentifier = ProcessInfo.processInfo.processIdentifier
-    private let ioQueue = DispatchQueue(label: "com.notchapp.extensions.bridge", qos: .utility)
+    private let ioQueue = DispatchQueue(label: "com.NotchTub.app.extensions.bridge", qos: .utility)
 
     private init() {}
 
@@ -116,7 +116,7 @@ final class ExtensionEventBridge {
     private func snapshotURL(for channel: Channel) -> URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        let directory = appSupport.appendingPathComponent("NotchAppExtensions", isDirectory: true)
+        let directory = appSupport.appendingPathComponent("NotchTubExtensions", isDirectory: true)
         switch channel {
         case .liveActivities:
             return directory.appendingPathComponent("live_activities.json", isDirectory: false)
@@ -157,11 +157,11 @@ final class ExtensionEventBridge {
         var notificationName: Notification.Name {
             switch self {
             case .liveActivities:
-                return Notification.Name("com.notchapp.extensions.liveActivitySnapshot")
+                return Notification.Name("com.NotchTub.app.extensions.liveActivitySnapshot")
             case .lockScreenWidgets:
-                return Notification.Name("com.notchapp.extensions.lockScreenWidgetSnapshot")
+                return Notification.Name("com.NotchTub.app.extensions.lockScreenWidgetSnapshot")
             case .notchExperiences:
-                return Notification.Name("com.notchapp.extensions.notchExperienceSnapshot")
+                return Notification.Name("com.NotchTub.app.extensions.notchExperienceSnapshot")
             }
         }
 

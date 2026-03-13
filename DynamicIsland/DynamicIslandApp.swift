@@ -20,7 +20,7 @@ import AVFoundation
 import Combine
 import Defaults
 import KeyboardShortcuts
-// Sparkle removed for local-only mode - see OTA_UPDATE_GUIDE.md
+import Sparkle
 import SwiftUI
 import SkyLightWindow
 
@@ -30,11 +30,14 @@ struct DynamicNotchApp: App {
     @Default(.menubarIcon) var showMenuBarIcon
     @Environment(\.openWindow) var openWindow
 
-    // Sparkle updater removed for local-only mode
-    // See OTA_UPDATE_GUIDE.md for implementing custom updates
+    let updaterController: SPUStandardUpdaterController
 
     init() {
-        // No external update service initialization
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+
+        // Initialize the settings window controller with the updater controller
+        SettingsWindowController.shared.setUpdaterController(updaterController)
     }
 
     var body: some Scene {
@@ -42,9 +45,9 @@ struct DynamicNotchApp: App {
             Button("Settings") {
                 SettingsWindowController.shared.showWindow()
             }
-            // Update checking disabled for local-only mode
+            CheckForUpdatesView(updater: updaterController.updater)
             Divider()
-            Button("Restart NotchApp") {
+            Button("Restart Atoll") {
                 guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return }
 
                 let workspace = NSWorkspace.shared
@@ -67,12 +70,19 @@ struct DynamicNotchApp: App {
         }
     }
 
+    @CommandsBuilder
     var commands: some Commands {
         CommandGroup(replacing: .appSettings) {
             Button("Settings…") {
                 SettingsWindowController.shared.showWindow()
             }
         }
+    }
+}
+
+final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
     }
 }
 
@@ -107,6 +117,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
     private var windowsHiddenForLock = false
     private var optionalShortcutHandlersRegistered = false
+    private weak var focusWithoutDevToolsMenuItem: NSMenuItem?
+    private weak var focusUseDevToolsMenuItem: NSMenuItem?
     
     // Debouncing mechanism for window size updates
     private var windowSizeUpdateWorkItem: DispatchWorkItem?
@@ -136,6 +148,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        installTopMenuItemsIfNeeded()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -208,7 +224,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         -> NSWindow
     {
         // Use the current required size instead of always using openNotchSize
-        let requiredSize = calculateRequiredNotchSize()
+        let baseSize = calculateRequiredNotchSize()
+        let requiredSize = adjustedSizeForScreen(baseSize, screen: screen)
         
         let window = DynamicIslandWindow(
             contentRect: NSRect(
@@ -220,7 +237,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.animationBehavior = .none
         
-        window.contentView = NSHostingView(
+        window.contentView = FirstMouseHostingView(
             rootView: ContentView()
                 .environmentObject(viewModel)
                 .environmentObject(webcamManager)
@@ -280,8 +297,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // If inline sneak peek is active, use a wider width to accommodate the expanded content
         if isInlineSneakPeekActive {
             // Calculate required width for inline sneak peek:
-            // Album art (~32) + Middle section (380) + Visualizer (~32) + padding = ~450
-            let inlineSneakPeekWidth: CGFloat = 450
+            // Album art (~32) + Middle section (380) + Visualizer (~32) + horizontal padding (28) + clip shape margin (12)
+            let inlineSneakPeekWidth: CGFloat = 460
             return CGSize(width: inlineSneakPeekWidth, height: vm.effectiveClosedNotchHeight)
         }
         
@@ -294,6 +311,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else if coordinator.currentView == .notes || coordinator.currentView == .clipboard {
             let preferredHeight = coordinator.notesLayoutState.preferredHeight
             baseSize.height = max(baseSize.height, preferredHeight)
+        } else if coordinator.currentView == .terminal {
+            let screenHeight = NSScreen.main?.visibleFrame.height ?? 800
+            let maxFraction = Defaults[.terminalMaxHeightFraction]
+            baseSize.height = min(screenHeight * maxFraction, max(300, screenHeight * maxFraction))
         }
         
         let adjustedContentSize = statsAdjustedNotchSize(
@@ -301,10 +322,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             isStatsTabActive: coordinator.currentView == .stats,
             secondRowProgress: coordinator.statsSecondRowExpansion
         )
-        return addShadowPadding(
+        var result = addShadowPadding(
             to: adjustedContentSize,
             isMinimalistic: Defaults[.enableMinimalisticUI]
         )
+
+        return result
+    }
+
+    /// Adjusts a base notch size for a specific screen by adding Dynamic Island
+    /// shadow insets and top-offset only when the screen lacks a physical notch
+    /// and the user has chosen the Dynamic Island style.
+    private func adjustedSizeForScreen(_ baseSize: CGSize, screen: NSScreen) -> CGSize {
+        guard shouldUseDynamicIslandMode(for: screen.localizedName) else {
+            return baseSize
+        }
+        var adjusted = baseSize
+        adjusted.width += dynamicIslandShadowInset * 2
+        adjusted.height += dynamicIslandTopOffset
+        return adjusted
     }
 
     func ensureWindowSize(_ size: CGSize, animated: Bool, force: Bool = false) {
@@ -316,25 +352,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if Defaults[.showOnAllDisplays] {
             for (screen, window) in windows {
-                if force || window.frame.size != size {
-                    resizeWindow(window, on: screen, to: size, animated: animated)
+                let screenSize = adjustedSizeForScreen(size, screen: screen)
+                if force || window.frame.size != screenSize {
+                    resizeWindow(window, on: screen, to: screenSize, animated: animated)
                 }
             }
         } else if let window {
             let screen = window.screen ?? NSScreen.screens.first { $0.frame.intersects(window.frame) } ?? NSScreen.main ?? NSScreen.screens.first
             guard let screen else { return }
-            if force || window.frame.size != size {
-                resizeWindow(window, on: screen, to: size, animated: animated)
+            let screenSize = adjustedSizeForScreen(size, screen: screen)
+            if force || window.frame.size != screenSize {
+                resizeWindow(window, on: screen, to: screenSize, animated: animated)
             }
         }
     }
 
     private func resizeWindow(_ window: NSWindow, on screen: NSScreen, to size: CGSize, animated: Bool) {
         let screenFrame = screen.frame
+        // Clamp width to screen width so the notch never extends beyond screen edges on scaled displays
+        let clampedWidth = min(size.width, screenFrame.width)
+        let clampedHeight = min(size.height, screenFrame.height)
         let centerX = screenFrame.midX
-        let newX = centerX - (size.width / 2)
-        let newY = screenFrame.origin.y + screenFrame.height - size.height
-        let targetFrame = NSRect(x: newX, y: newY, width: size.width, height: size.height)
+        let newX = centerX - (clampedWidth / 2)
+        let newY = screenFrame.origin.y + screenFrame.height - clampedHeight
+        let targetFrame = NSRect(x: newX, y: newY, width: clampedWidth, height: clampedHeight)
 
         window.setFrame(targetFrame, display: true)
     }
@@ -355,16 +396,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Defaults.Keys.migrateProgressBarStyle()
         Defaults.Keys.migrateMusicAuxControls()
         Defaults.Keys.migrateMusicControlSlots()
-        Defaults.Keys.migrateToAppleMusicDefault()
         Defaults.Keys.migrateCapsLockTintMode()
         
         // Initialize idle animations (load bundled + built-in face)
         idleAnimationManager.initializeDefaultAnimations()
 
         applySelectedAppIcon()
+        installTopMenuItemsIfNeeded()
+
+        Defaults.publisher(.focusMonitoringMode, options: [])
+            .sink { [weak self] _ in
+                self?.updateFocusMenuState()
+            }
+            .store(in: &cancellables)
         
         // Setup SystemHUD Manager
         SystemHUDManager.shared.setup(coordinator: coordinator)
+
+        // Setup BetterDisplay integration
+        BetterDisplayManager.shared.configure(coordinator: coordinator)
         
         // Setup ScreenRecording Manager
         if Defaults[.enableScreenRecordingDetection] {
@@ -380,8 +430,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         PrivacyIndicatorManager.shared.startMonitoring()
         
         // Observe tab changes - use immediate resize to keep the notch pinned
+        // Deferred to next run loop tick because @Published fires on willSet,
+        // so coordinator.currentView still holds the OLD value at emission time.
         coordinator.$currentView.sink { [weak self] _ in
-            self?.updateWindowSizeForTabSwitch()
+            DispatchQueue.main.async {
+                self?.updateWindowSizeForTabSwitch()
+            }
         }.store(in: &cancellables)
 
         coordinator.$notesLayoutState
@@ -417,6 +471,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }.store(in: &cancellables)
 
         Defaults.publisher(.openNotchWidth, options: []).sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
+        // Observe terminal settings changes
+        Defaults.publisher(.enableTerminalFeature, options: []).sink { [weak self] _ in
+            self?.debouncedUpdateWindowSize()
+        }.store(in: &cancellables)
+
+        Defaults.publisher(.terminalMaxHeightFraction, options: []).sink { [weak self] _ in
             self?.debouncedUpdateWindowSize()
         }.store(in: &cancellables)
 
@@ -470,11 +533,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }.store(in: &cancellables)
         
         // Observe minimalistic UI setting changes - trigger window resize
-        Defaults.publisher(.enableMinimalisticUI, options: []).sink { [weak self] change in
-            // Force sneak peek to standard mode when minimalistic UI is enabled
-            if change.newValue == true && Defaults[.sneakPeekStyles] != .standard {
-                Defaults[.sneakPeekStyles] = .standard
-            }
+        Defaults.publisher(.enableMinimalisticUI, options: []).sink { [weak self] _ in
             // Update window size IMMEDIATELY (no debouncing) to prevent position shift
             self?.updateWindowSizeIfNeeded()
         }.store(in: &cancellables)
@@ -523,8 +582,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             forName: Notification.Name.automaticallySwitchDisplayChanged, object: nil, queue: nil
         ) { [weak self] _ in
             guard let self = self, let window = self.window else { return }
-            window.alphaValue =
-                self.coordinator.selectedScreen == self.coordinator.preferredScreen ? 1 : 0
+            DispatchQueue.main.async {
+                window.alphaValue =
+                    self.coordinator.selectedScreen == self.coordinator.preferredScreen ? 1 : 0
+            }
         }
 
         NotificationCenter.default.addObserver(
@@ -634,8 +695,155 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let timerWidgetManager = LockScreenTimerWidgetManager.shared
         timerWidgetManager.handleLockStateChange(isLocked: LockScreenManager.shared.currentLockStatus)
 
-        // Ensure the reminder widget mirrors live activity snapshots as soon as they exist.
-        _ = LockScreenReminderWidgetManager.shared
+    }
+
+    private func installTopMenuItemsIfNeeded() {
+        guard let mainMenu = NSApp.mainMenu else { return }
+        if mainMenu.items.contains(where: { $0.identifier?.rawValue == "Atoll.Focus.Menu" }) {
+            updateFocusMenuState()
+            return
+        }
+
+        let insertionIndex = preferredMenuInsertionIndex(in: mainMenu)
+
+        let focusMenuItem = NSMenuItem(title: "Focus", action: nil, keyEquivalent: "")
+        focusMenuItem.identifier = NSUserInterfaceItemIdentifier("Atoll.Focus.Menu")
+        let focusSubmenu = NSMenu(title: "Focus")
+
+        let withoutDevTools = NSMenuItem(
+            title: "Use without DevTools",
+            action: #selector(selectFocusWithoutDevTools),
+            keyEquivalent: ""
+        )
+        withoutDevTools.target = self
+
+        let useDevTools = NSMenuItem(
+            title: "Use DevTools",
+            action: #selector(selectFocusUseDevTools),
+            keyEquivalent: ""
+        )
+        useDevTools.target = self
+
+        focusSubmenu.addItem(withoutDevTools)
+        focusSubmenu.addItem(useDevTools)
+        focusMenuItem.submenu = focusSubmenu
+        mainMenu.insertItem(focusMenuItem, at: insertionIndex)
+
+        focusWithoutDevToolsMenuItem = withoutDevTools
+        focusUseDevToolsMenuItem = useDevTools
+
+        let accessibilityMenuItem = NSMenuItem(title: "Accessibility", action: nil, keyEquivalent: "")
+        accessibilityMenuItem.identifier = NSUserInterfaceItemIdentifier("Atoll.Accessibility.Menu")
+        let accessibilitySubmenu = NSMenu(title: "Accessibility")
+
+        let requestAccessibility = NSMenuItem(
+            title: "Request Accessibility Access",
+            action: #selector(requestAccessibilityAccess),
+            keyEquivalent: ""
+        )
+        requestAccessibility.target = self
+
+        let openAccessibility = NSMenuItem(
+            title: "Open Accessibility Settings",
+            action: #selector(openAccessibilitySettings),
+            keyEquivalent: ""
+        )
+        openAccessibility.target = self
+
+        accessibilitySubmenu.addItem(requestAccessibility)
+        accessibilitySubmenu.addItem(openAccessibility)
+        accessibilityMenuItem.submenu = accessibilitySubmenu
+        mainMenu.insertItem(accessibilityMenuItem, at: insertionIndex + 1)
+
+        let permissionsMenuItem = NSMenuItem(title: "Permissions", action: nil, keyEquivalent: "")
+        permissionsMenuItem.identifier = NSUserInterfaceItemIdentifier("Atoll.Permissions.Menu")
+        let permissionsSubmenu = NSMenu(title: "Permissions")
+
+        let requestFullDisk = NSMenuItem(
+            title: "Request Full Disk Access",
+            action: #selector(requestFullDiskAccess),
+            keyEquivalent: ""
+        )
+        requestFullDisk.target = self
+
+        let openFullDisk = NSMenuItem(
+            title: "Open Full Disk Access Settings",
+            action: #selector(openFullDiskAccessSettings),
+            keyEquivalent: ""
+        )
+        openFullDisk.target = self
+
+        let openDevTools = NSMenuItem(
+            title: "Open Developer Tools Settings",
+            action: #selector(openDeveloperToolsSettingsFromMenu),
+            keyEquivalent: ""
+        )
+        openDevTools.target = self
+
+        permissionsSubmenu.addItem(requestFullDisk)
+        permissionsSubmenu.addItem(openFullDisk)
+        permissionsSubmenu.addItem(NSMenuItem.separator())
+        permissionsSubmenu.addItem(openDevTools)
+        permissionsMenuItem.submenu = permissionsSubmenu
+        mainMenu.insertItem(permissionsMenuItem, at: insertionIndex + 2)
+
+        updateFocusMenuState()
+    }
+
+    private func preferredMenuInsertionIndex(in mainMenu: NSMenu) -> Int {
+        if let index = mainMenu.items.firstIndex(where: { $0.title == "Window" }) {
+            return index
+        }
+        if let index = mainMenu.items.firstIndex(where: { $0.title == "Help" }) {
+            return index
+        }
+        return max(mainMenu.numberOfItems, 0)
+    }
+
+    private func updateFocusMenuState() {
+        let mode = Defaults[.focusMonitoringMode]
+        focusWithoutDevToolsMenuItem?.state = mode == .withoutDevTools ? .on : .off
+        focusUseDevToolsMenuItem?.state = mode == .useDevTools ? .on : .off
+    }
+
+    @objc private func selectFocusWithoutDevTools() {
+        Defaults[.focusMonitoringMode] = .withoutDevTools
+        updateFocusMenuState()
+    }
+
+    @objc private func selectFocusUseDevTools() {
+        Defaults[.focusMonitoringMode] = .useDevTools
+        updateFocusMenuState()
+    }
+
+    @objc private func requestAccessibilityAccess() {
+        AccessibilityPermissionStore.shared.requestAuthorizationPrompt()
+    }
+
+    @objc private func openAccessibilitySettings() {
+        AccessibilityPermissionStore.shared.openSystemSettings()
+    }
+
+    @objc private func requestFullDiskAccess() {
+        FullDiskAccessPermissionStore.shared.requestAccessPrompt()
+    }
+
+    @objc private func openFullDiskAccessSettings() {
+        FullDiskAccessPermissionStore.shared.openSystemSettings()
+    }
+
+    @objc private func openDeveloperToolsSettingsFromMenu() {
+        let urls = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_DevTools",
+            "x-apple.systempreferences:com.apple.preference.security"
+        ]
+
+        for candidate in urls {
+            guard let url = URL(string: candidate) else { continue }
+            if NSWorkspace.shared.open(url) {
+                return
+            }
+        }
     }
 
     private func registerOptionalShortcutHandlers() {
@@ -686,6 +894,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             ColorPickerPanelManager.shared.toggleColorPickerPanel()
         }
 
+        KeyboardShortcuts.onKeyDown(for: .toggleTerminalTab) { [weak self] in
+            guard let self else { return }
+            guard Defaults[.enableShortcuts], Defaults[.enableTerminalFeature] else { return }
+
+            if vm.notchState == .closed {
+                vm.open()
+                coordinator.currentView = .terminal
+            } else {
+                if coordinator.currentView == .terminal {
+                    vm.close()
+                } else {
+                    coordinator.currentView = .terminal
+                }
+            }
+        }
+
         KeyboardShortcuts.onKeyDown(for: .screenAssistantPanel) { [weak self] in
             guard let self else { return }
             guard Defaults[.enableShortcuts], Defaults[.enableScreenAssistant] else { return }
@@ -712,6 +936,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         updateShortcut(.clipboardHistoryPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableClipboardManager])
         updateShortcut(.colorPickerPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableColorPickerFeature])
         updateShortcut(.screenAssistantPanel, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableScreenAssistant])
+        updateShortcut(.toggleTerminalTab, isEnabled: Defaults[.enableShortcuts] && Defaults[.enableTerminalFeature])
     }
 
     @MainActor

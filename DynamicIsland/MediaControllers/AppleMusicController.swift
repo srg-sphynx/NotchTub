@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -129,42 +132,9 @@ class AppleMusicController: MediaControllerProtocol {
         updatedState.isShuffled = descriptor.atIndex(7)?.booleanValue ?? false
         let repeatModeValue = descriptor.atIndex(8)?.int32Value ?? 0
         updatedState.repeatMode = RepeatMode(rawValue: Int(repeatModeValue)) ?? .off
-        
-        // Get artwork data from descriptor
-        var artworkData = descriptor.atIndex(9)?.data as Data?
-        
-        // If artwork is empty, retry fetching after a brief delay
-        // This handles cases where artwork takes a moment to load
-        if artworkData == nil || artworkData?.isEmpty == true {
-            try? await Task.sleep(for: .milliseconds(300))
-            artworkData = try? await fetchArtworkOnly()
-        }
-        
-        updatedState.artwork = artworkData
+        updatedState.artwork = descriptor.atIndex(9)?.data as Data?
         updatedState.lastUpdated = Date()
         self.playbackState = updatedState
-    }
-    
-    /// Fetches only the artwork data for the current track
-    private func fetchArtworkOnly() async throws -> Data? {
-        let script = """
-        tell application "Music"
-            try
-                set artData to raw data of artwork 1 of current track
-                return artData
-            on error
-                try
-                    set artData to data of artwork 1 of current track
-                    return artData
-                on error
-                    return ""
-                end try
-            end try
-        end tell
-        """
-        
-        let result = try await AppleScriptHelper.execute(script)
-        return result?.data as Data?
     }
     
     // MARK: - Private Methods
@@ -175,41 +145,78 @@ class AppleMusicController: MediaControllerProtocol {
     }
     
     private func fetchPlaybackInfoAsync() async throws -> NSAppleEventDescriptor? {
-        let script = """
-        tell application "Music"
-            set isRunning to true
-            try
-                set playerState to player state is playing
-                set currentTrackName to name of current track
-                set currentTrackArtist to artist of current track
-                set currentTrackAlbum to album of current track
-                set trackPosition to player position
-                set trackDuration to duration of current track
-                set shuffleState to shuffle enabled
-                set repeatState to song repeat
-                if repeatState is off then
-                    set repeatValue to 1
-                else if repeatState is one then
-                    set repeatValue to 2
-                else if repeatState is all then
-                    set repeatValue to 3
-                end if
-
-                set artData to ""
+        if #available(macOS 26.0, *) {
+            let script = """
+            tell application "Music"
                 try
-                    set artData to raw data of artwork 1 of current track
+                    set playerState to player state is playing
+                    set currentTrackName to name of current track
+                    set currentTrackArtist to artist of current track
+                    set currentTrackAlbum to album of current track
+                    set trackPosition to player position
+                    set trackDuration to duration of current track
+                    set shuffleState to shuffle enabled
+                    set repeatState to song repeat
+                    if repeatState is off then
+                        set repeatValue to 1
+                    else if repeatState is one then
+                        set repeatValue to 2
+                    else if repeatState is all then
+                        set repeatValue to 3
+                    end if
+
+                    set artData to ""
+                    try
+                        set libraryTrack to first track of playlist "Library" whose name is currentTrackName and artist is currentTrackArtist
+                        set artData to data of artwork 1 of libraryTrack
+                    on error
+                        try
+                            set artData to data of artwork 1 of current track
+                        on error
+                            set artData to ""
+                        end try
+                    end try
+
+                    return {playerState, currentTrackName, currentTrackArtist, currentTrackAlbum, trackPosition, trackDuration, shuffleState, repeatValue, artData}
                 on error
+                    return {false, "Not Playing", "Unknown", "Unknown", 0, 0, false, 0, ""}
+                end try
+            end tell
+            """
+            return try await AppleScriptHelper.execute(script)
+        } else {
+            let script = """
+            tell application "Music"
+                set isRunning to true
+                try
+                    set playerState to player state is playing
+                    set currentTrackName to name of current track
+                    set currentTrackArtist to artist of current track
+                    set currentTrackAlbum to album of current track
+                    set trackPosition to player position
+                    set trackDuration to duration of current track
+                    set shuffleState to shuffle enabled
+                    set repeatState to song repeat
+                    if repeatState is off then
+                        set repeatValue to 1
+                    else if repeatState is one then
+                        set repeatValue to 2
+                    else if repeatState is all then
+                        set repeatValue to 3
+                    end if
+
                     try
                         set artData to data of artwork 1 of current track
+                    on error
+                        set artData to ""
                     end try
+                    return {playerState, currentTrackName, currentTrackArtist, currentTrackAlbum, trackPosition, trackDuration, shuffleState, repeatValue, artData}
+                on error
+                    return {false, "Not Playing", "Unknown", "Unknown", 0, 0, false, 0, ""}
                 end try
-                return {playerState, currentTrackName, currentTrackArtist, currentTrackAlbum, trackPosition, trackDuration, shuffleState, repeatValue, artData}
-            on error
-                return {false, "Not Playing", "Unknown", "Unknown", 0, 0, false, 0, ""}
-            end try
-        end tell
-        """
-        
-        return try await AppleScriptHelper.execute(script)
+            end tell
+            """
+            return try await AppleScriptHelper.execute(script)
+        }
     }
 }

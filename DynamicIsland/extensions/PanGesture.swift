@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,7 +76,11 @@ private struct ScrollMonitor: NSViewRepresentable {
         private var active = false
         private let noiseThreshold: CGFloat = 0.2
         private weak var observedView: NSView?
-        private let hoverInset: CGFloat = 14
+        /// Small vertical inset so scroll gestures fire when the cursor
+        /// "kisses" the very top of the screen inside the physical notch
+        /// area. Kept at zero horizontally to avoid unwanted hover opens
+        /// from the sides.
+        private let verticalEdgeInset: CGFloat = 4
         private var lastEventTimestamp: TimeInterval = 0
 
         init(direction: PanDirection, threshold: CGFloat, action: @escaping (CGFloat, NSEvent.Phase) -> Void) {
@@ -151,7 +158,12 @@ private struct ScrollMonitor: NSViewRepresentable {
 
             let windowPoint = window.convertPoint(fromScreen: screenPoint)
             let localPoint = view.convert(windowPoint, from: nil)
-            let hitArea = view.bounds.insetBy(dx: -hoverInset, dy: -hoverInset)
+
+            // Extend the hit area vertically by a few points so the cursor
+            // at the very top screen edge (kissing the notch) still triggers
+            // scroll gestures. No horizontal extension to prevent false opens
+            // from the sides of the notch.
+            let hitArea = view.bounds.insetBy(dx: 0, dy: -verticalEdgeInset)
             return hitArea.contains(localPoint)
         }
     }

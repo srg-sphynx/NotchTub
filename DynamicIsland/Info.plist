@@ -8,7 +8,15 @@
 		<true/>
 	</dict>
 	<key>NSScreenCaptureUsageDescription</key>
-	<string>NotchTub needs screen recording permission to capture screenshots for the AI assistant feature.</string>
+	<string>Atoll needs screen recording permission to capture screenshots for the AI assistant feature.</string>
+	<key>SUEnableDownloaderService</key>
+	<true/>
+	<key>SUEnableInstallerLauncherService</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/Ebullioscopic/Atoll/main/Updates/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>q2YQaJ1umGkaIJWMGN9Isj5fx/YlUtxnzHEBqFtfZcg=</string>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict/>

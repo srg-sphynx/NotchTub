@@ -82,7 +82,7 @@ struct NotchStatsView: View {
 
         if showCpuGraph {
             graphs.append(SingleGraphData(
-                title: "CPU",
+                title: String(localized: "CPU"),
                 value: statsManager.cpuUsageString,
                 data: statsManager.cpuHistory,
                 color: .blue,
@@ -92,7 +92,7 @@ struct NotchStatsView: View {
 
         if showMemoryGraph {
             graphs.append(SingleGraphData(
-                title: "Memory",
+                title: String(localized: "Memory"),
                 value: statsManager.memoryUsageString,
                 data: statsManager.memoryHistory,
                 color: .green,
@@ -102,7 +102,7 @@ struct NotchStatsView: View {
 
         if showGpuGraph {
             graphs.append(SingleGraphData(
-                title: "GPU",
+                title: String(localized: "GPU"),
                 value: statsManager.gpuUsageString,
                 data: statsManager.gpuHistory,
                 color: .purple,
@@ -112,7 +112,7 @@ struct NotchStatsView: View {
 
         if showNetworkGraph {
             graphs.append(DualGraphData(
-                title: "Network",
+                title: String(localized: "Network"),
                 positiveValue: "↓" + statsManager.networkDownloadString,
                 negativeValue: "↑" + statsManager.networkUploadString,
                 positiveData: statsManager.networkDownloadHistory,
@@ -126,9 +126,9 @@ struct NotchStatsView: View {
 
         if showDiskGraph {
             graphs.append(DualGraphData(
-                title: "Disk",
-                positiveValue: "R " + statsManager.diskReadString,
-                negativeValue: "W " + statsManager.diskWriteString,
+                title: String(localized: "Disk"),
+                positiveValue: String(localized: "R ") + statsManager.diskReadString,
+                negativeValue: String(localized: "W ") + statsManager.diskWriteString,
                 positiveData: statsManager.diskReadHistory,
                 negativeData: statsManager.diskWriteHistory,
                 positiveColor: .cyan,
@@ -430,30 +430,30 @@ struct NotchStatsView: View {
     }
 }
 
-// Unified Stats Card Component - handles both single and dual data types, matches NotchTub sizing
+// Unified Stats Card Component - handles both single and dual data types, matches boring.notch sizing
 struct UnifiedStatsCard: View {
     let graphData: GraphData
     @State private var isHovered = false
     
     var body: some View {
-        VStack(spacing: 3) { // Match NotchTub spacing
+        VStack(spacing: 3) { // Match boring.notch spacing
             // Header - consistent across all card types
             HStack(spacing: 4) {
                 Image(systemName: graphData.icon)
                     .foregroundStyle(graphData.color)
-                    .font(.caption) // Match NotchTub font size
+                    .font(.caption) // Match boring.notch font size
                 
                 Text(graphData.title)
-                    .font(.caption) // Match NotchTub font size
+                    .font(.caption) // Match boring.notch font size
                     .fontWeight(.medium)
                     .foregroundStyle(Color.white.opacity(0.8))
                 
                 Spacer()
                 
-                // Show value on right for single graphs like NotchTub
+                // Show value on right for single graphs like boring.notch
                 if let singleData = graphData as? SingleGraphData {
                     Text(singleData.value)
-                        .font(.caption) // Match NotchTub font size
+                        .font(.caption) // Match boring.notch font size
                         .fontWeight(.bold)
                         .foregroundStyle(.white)
                 }
@@ -492,7 +492,7 @@ struct UnifiedStatsCard: View {
                     )
                 }
             }
-            .frame(height: 36) // Match NotchTub exactly - reduced from 50
+            .frame(height: 36) // Match boring.notch exactly - reduced from 50
             
             // Click hint - shown for graphs that open popovers
             if ["CPU", "Memory", "GPU", "Network", "Disk"].contains(graphData.title) {
@@ -503,7 +503,7 @@ struct UnifiedStatsCard: View {
                     .animation(.easeInOut(duration: 0.2), value: isHovered)
             }
         }
-        .padding(8) // Match NotchTub padding - reduced from 10
+        .padding(8) // Match boring.notch padding - reduced from 10
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.white.opacity(0.08))

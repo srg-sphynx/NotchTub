@@ -27,7 +27,7 @@ import os
 final class SystemTimerBridge {
     static let shared = SystemTimerBridge()
 
-    private let logger = os.Logger(subsystem: "com.notchapp", category: "SystemTimerBridge")
+    private let logger = os.Logger(subsystem: "com.NotchTub.app", category: "SystemTimerBridge")
 
     private struct TimerMetadata: Equatable {
         enum State: Int {

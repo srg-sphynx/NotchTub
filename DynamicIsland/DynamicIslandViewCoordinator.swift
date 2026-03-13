@@ -102,19 +102,21 @@ class DynamicIslandViewCoordinator: ObservableObject {
     static let shared = DynamicIslandViewCoordinator()
     private var cancellables = Set<AnyCancellable>()
     
-    private var isResettingViewForMinimalistic = false
+    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .colorPicker, .notes, .clipboard, .terminal, .extensionExperience]
+    
+    /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
+    @Published var tabSwitchForward: Bool = true
     
     @Published var currentView: NotchViews = .home {
         didSet {
-            // Prevent recursive didSet when resetting to .home
-            guard !isResettingViewForMinimalistic else { return }
-            
             if Defaults[.enableMinimalisticUI] && currentView != .home {
-                isResettingViewForMinimalistic = true
                 currentView = .home
-                isResettingViewForMinimalistic = false
                 return
             }
+            // Track direction before SwiftUI re-renders
+            let oldIdx = Self.tabOrder.firstIndex(of: oldValue) ?? 0
+            let newIdx = Self.tabOrder.firstIndex(of: currentView) ?? 0
+            tabSwitchForward = newIdx >= oldIdx
             handleStatsTabTransition(from: oldValue, to: currentView)
         }
     }
@@ -217,6 +219,30 @@ class DynamicIslandViewCoordinator: ObservableObject {
             .store(in: &cancellables)
 
         handleExtensionExperienceSnapshot(extensionNotchExperienceManager.activeExperiences)
+
+        // Observe all tab-affecting settings to enforce minimum notch width
+        Publishers.MergeMany(
+            Defaults.publisher(.showStandardMediaControls).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.showCalendar).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.showMirror).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.dynamicShelf).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableTimerFeature).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.timerDisplayMode).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableStatsFeature).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableNotes).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableClipboardManager).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.clipboardDisplayMode).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableTerminalFeature).map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.enableMinimalisticUI).map { _ in () }.eraseToAnyPublisher()
+        )
+        .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
+        .sink { _ in
+            enforceMinimumNotchWidth()
+        }
+        .store(in: &cancellables)
+
+        // Enforce minimum width on launch for existing configurations
+        enforceMinimumNotchWidth()
     }
 
     private func handleStatsTabTransition(from oldValue: NotchViews, to newValue: NotchViews) {

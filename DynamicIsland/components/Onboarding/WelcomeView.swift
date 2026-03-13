@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +41,7 @@ struct WelcomeView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 100, height: 100)
                         .padding(.bottom, 8)
-                    Text("NotchApp")
+                    Text("Atoll")
                         .font(.system(.largeTitle, design: .default))
                         .fontWeight(.semibold)
                     Text("Welcome")
@@ -70,19 +73,31 @@ struct WelcomeView: View {
                             .padding(.vertical, 6)
                     }
                     .buttonStyle(BorderedProminentButtonStyle())
-
+                    
+                    // Privacy Policy Link
+                    Button(action: {
+                        if let url = URL(string: "https://ebullioscopic.github.io/DynamicIsland/privacy-policy") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }) {
+                        Text("Privacy Policy")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 8)
                 }
                 .padding(.top)
             }
             
-            Image("logo")
+            Image("ebullioscopic")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(height: 28)
+                .frame(height: 22)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding()
                 .padding(.bottom, 36)
-                .opacity(0.6)
+                .blendMode(.overlay)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea()

@@ -61,43 +61,43 @@ struct ExtensionsSettingsView: View {
     
     private var globalTogglesSection: some View {
         Section {
-            Defaults.Toggle("Enable third-party extensions", key: .enableThirdPartyExtensions)
+            Defaults.Toggle(String(localized:"Enable third-party extensions"), key: .enableThirdPartyExtensions)
                 .settingsHighlight(id: highlightID("Enable third-party extensions"))
             
             if Defaults[.enableThirdPartyExtensions] {
-                Defaults.Toggle("Allow extension live activities", key: .enableExtensionLiveActivities)
+                Defaults.Toggle(String(localized:"Allow extension live activities"), key: .enableExtensionLiveActivities)
                     .settingsHighlight(id: highlightID("Allow extension live activities"))
                 
-                Defaults.Toggle("Allow extension lock screen widgets", key: .enableExtensionLockScreenWidgets)
+                                Defaults.Toggle(String(localized:"Allow extension lock screen widgets"), key: .enableExtensionLockScreenWidgets)
                     .settingsHighlight(id: highlightID("Allow extension lock screen widgets"))
 
-                Defaults.Toggle("Allow extension notch experiences", key: .enableExtensionNotchExperiences)
+                                                Defaults.Toggle(String(localized:"Allow extension notch experiences"), key: .enableExtensionNotchExperiences)
                     .settingsHighlight(id: highlightID("Allow extension notch experiences"))
 
                 if Defaults[.enableExtensionNotchExperiences] {
                     VStack(alignment: .leading, spacing: 8) {
-                        Defaults.Toggle("Show extension tabs", key: .enableExtensionNotchTabs)
+                        Defaults.Toggle(String(localized:"Show extension tabs"), key: .enableExtensionNotchTabs)
                             .tint(.accentColor)
-                        Defaults.Toggle("Allow minimalistic overrides", key: .enableExtensionNotchMinimalisticOverrides)
+                        Defaults.Toggle(String(localized:"Allow minimalistic overrides"), key: .enableExtensionNotchMinimalisticOverrides)
                             .tint(.accentColor)
-                        Defaults.Toggle("Allow interactive web content", key: .enableExtensionNotchInteractiveWebViews)
+                        Defaults.Toggle(String(localized:"Allow interactive web content"), key: .enableExtensionNotchInteractiveWebViews)
                             .tint(.accentColor)
                     }
                     .padding(.leading, 4)
                 }
                 
-                Defaults.Toggle("Enable extension diagnostics logging", key: .extensionDiagnosticsLoggingEnabled)
+                Defaults.Toggle(String(localized:"Enable extension diagnostics logging"), key: .extensionDiagnosticsLoggingEnabled)
                     .settingsHighlight(id: highlightID("Enable extension diagnostics logging"))
             }
         } header: {
             Text("Global Settings")
         } footer: {
             if Defaults[.enableThirdPartyExtensions] {
-                Text("Third-party apps using AtollExtensionKit can display live activities, lock screen widgets, and dedicated notch experiences. Toggle features above or manage individual app permissions below.")
+                Text("Third-party apps using NotchTubExtensionKit can display live activities, lock screen widgets, and dedicated notch experiences. Toggle features above or manage individual app permissions below.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
-                Text("Enable extensions to allow third-party apps to display live activities and lock screen widgets in NotchApp.")
+                Text("Enable extensions to allow third-party apps to display live activities and lock screen widgets in NotchTub.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -116,7 +116,7 @@ struct ExtensionsSettingsView: View {
                         .font(.headline)
                         .foregroundStyle(.secondary)
                     
-                    Text("Apps using AtollExtensionKit will appear here once they request permission")
+                    Text("Apps using NotchTubExtensionKit will appear here once they request permission")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

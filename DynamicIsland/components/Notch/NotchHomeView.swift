@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +32,8 @@ struct MusicPlayerView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
+            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+                .padding(.all, 5)
             MusicControlsView()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .drawingGroup()
@@ -126,10 +130,15 @@ struct AlbumArtView: View {
 }
 
 struct MusicControlsView: View {
+    @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var musicManager = MusicManager.shared
-    @State private var sliderValue: Double = 0
+    @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
+    @State private var sliderValue: Double = MusicManager.shared.estimatedPlaybackPosition()
     @State private var dragging: Bool = false
     @State private var lastDragged: Date = .distantPast
+    @State private var hudValue: Double = 0
+    @State private var hudDragging: Bool = false
+    @State private var hudLastDragged: Date = .distantPast
     @Default(.showShuffleAndRepeat) private var showCustomControls
     @Default(.musicControlSlots) private var slotConfig
     @Default(.showMediaOutputControl) private var showMediaOutputControl
@@ -141,7 +150,11 @@ struct MusicControlsView: View {
     var body: some View {
         VStack(alignment: .leading) {
             songInfoAndSlider
-            playbackControls
+            if shouldShowControlHUDRow {
+                controlHUDRow
+            } else {
+                playbackControls
+            }
         }
         .buttonStyle(PlainButtonStyle())
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -203,8 +216,13 @@ struct MusicControlsView: View {
         }
     }
 
+    /// Whether the progress timeline should be paused (no ticks).
+    private var isProgressTimelinePaused: Bool {
+        !musicManager.isPlaying || musicManager.isLiveStream || musicManager.playbackRate <= 0
+    }
+
     private var musicSlider: some View {
-        TimelineView(.animation(minimumInterval: musicManager.playbackRate > 0 ? 0.1 : nil)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0, paused: isProgressTimelinePaused)) { timeline in
             MusicSliderView(
                 sliderValue: $sliderValue,
                 duration: $musicManager.songDuration,
@@ -233,6 +251,121 @@ struct MusicControlsView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private var shouldShowControlHUDRow: Bool {
+        guard vm.notchState == .open else { return false }
+        guard coordinator.sneakPeek.show else { return false }
+        guard Defaults[.enableSystemHUD] else { return false }
+        guard !Defaults[.enableCustomOSD] && !Defaults[.enableVerticalHUD] && !Defaults[.enableCircularHUD] else { return false }
+
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            return Defaults[.enableVolumeHUD]
+        case .brightness:
+            return Defaults[.enableBrightnessHUD]
+        case .backlight:
+            return Defaults[.enableKeyboardBacklightHUD]
+        default:
+            return false
+        }
+    }
+
+    private var controlHUDRow: some View {
+        HStack(alignment: .center, spacing: 10) {
+            if !controlLeftIconName.isEmpty {
+                Image(systemName: controlLeftIconName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22, height: 22, alignment: .center)
+            }
+
+            controlHUDSlider
+
+            if !controlRightIconName.isEmpty {
+                Image(systemName: controlRightIconName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 22, height: 22, alignment: .center)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .onAppear { syncHUDValueIfNeeded(force: true) }
+        .onChange(of: coordinator.sneakPeek.value) { _, _ in
+            syncHUDValueIfNeeded(force: false)
+        }
+    }
+
+    private var controlHUDSlider: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            CustomSlider(
+                value: Binding(
+                    get: { hudValue },
+                    set: { newValue in
+                        hudValue = newValue
+                        updateControlHUDValue(newValue)
+                    }
+                ),
+                range: 0...1,
+                color: .white,
+                dragging: $hudDragging,
+                lastDragged: $hudLastDragged,
+                onValueChange: { newValue in
+                    updateControlHUDValue(newValue)
+                },
+                thumbSize: 10,
+                restingTrackHeight: 4,
+                draggingTrackHeight: 7
+            )
+            .frame(height: 7)
+            Spacer(minLength: 0)
+        }
+        .frame(height: 22)
+    }
+
+    private func syncHUDValueIfNeeded(force: Bool) {
+        guard shouldShowControlHUDRow else { return }
+        guard force || !hudDragging else { return }
+        hudValue = Double(coordinator.sneakPeek.value)
+    }
+
+    private func updateControlHUDValue(_ newValue: Double) {
+        let clamped = max(0, min(1, newValue))
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            SystemVolumeController.shared.setVolume(Float(clamped))
+        case .brightness:
+            SystemBrightnessController.shared.setBrightness(Float(clamped))
+        case .backlight:
+            SystemKeyboardBacklightController.shared.setLevel(Float(clamped))
+        default:
+            break
+        }
+    }
+
+    private var controlLeftIconName: String {
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            return SystemVolumeController.shared.isMuted ? "speaker.slash" : "speaker.wave.1"
+        case .brightness:
+            return "sun.min.fill"
+        case .backlight:
+            return "light.min"
+        default:
+            return ""
+        }
+    }
+
+    private var controlRightIconName: String {
+        switch coordinator.sneakPeek.type {
+        case .volume:
+            return SystemVolumeController.shared.isMuted ? "" : "speaker.wave.3"
+        case .brightness:
+            return "sun.max.fill"
+        case .backlight:
+            return "light.max"
+        default:
+            return ""
+        }
     }
 
     private var brandAccentColor: Color {
@@ -394,8 +527,14 @@ struct NotchHomeView: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject private var extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
+    @ObservedObject private var musicManager = MusicManager.shared
     @Default(.showStandardMediaControls) private var showStandardMediaControls
     let albumArtNamespace: Namespace.ID
+
+    /// Whether the music player should actively display (enabled AND has real content).
+    private var shouldShowMusicPlayer: Bool {
+        showStandardMediaControls && musicManager.hasActiveSession
+    }
     
     var body: some View {
         Group {
@@ -419,17 +558,24 @@ struct NotchHomeView: View {
                 }
             } else {
                 // Normal mode: Show full music player with optional calendar and webcam
-                if showStandardMediaControls {
+                if shouldShowMusicPlayer {
                     MusicPlayerView(albumArtNamespace: albumArtNamespace)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
                 if Defaults[.showCalendar] {
-                    CalendarView()
-                        .onHover { isHovering in
-                            vm.isHoveringCalendar = isHovering
+                    Group {
+                        if shouldShowMusicPlayer {
+                            CalendarView()
+                        } else {
+                            StandaloneCalendarView()
                         }
-                        .environmentObject(vm)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onHover { isHovering in
+                        vm.isHoveringCalendar = isHovering
+                    }
+                    .environmentObject(vm)
                 }
                 
                 if Defaults[.showMirror],
@@ -498,6 +644,13 @@ struct MusicSliderView: View {
             guard !isLiveStream else { return }
             guard !dragging, timestampDate.timeIntervalSince(lastDragged) > -1 else { return }
             sliderValue = MusicManager.shared.estimatedPlaybackPosition(at: newDate)
+        }
+        .onChange(of: isPlaying) { _, playing in
+            // Snap slider to the exact position when music pauses so
+            // the in-flight animation doesn't coast past the true value.
+            if !playing {
+                sliderValue = MusicManager.shared.estimatedPlaybackPosition()
+            }
         }
         .onChange(of: isLiveStream) { isLive in
             if isLive {
@@ -570,6 +723,15 @@ struct MusicSliderView: View {
             onValueChange: onValueChange,
             restingTrackHeight: restingTrackHeight,
             draggingTrackHeight: draggingTrackHeight
+        )
+        // Smoothly interpolate the filled track between 1-second ticks using
+        // Core Animation — runs on the GPU with zero CPU polling cost.
+        // Disabled while dragging or paused so the bar responds instantly.
+        .animation(
+            !dragging && isPlaying && !isLiveStream
+                ? .linear(duration: 1.0)
+                : nil,
+            value: sliderValue
         )
     }
 

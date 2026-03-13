@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,30 +21,62 @@
  */
 
 import SwiftUI
+import Sparkle
 
-// MARK: - Stubbed Update Views (Sparkle removed for local-only mode)
-// See OTA_UPDATE_GUIDE.md for instructions on implementing updates
+final class CheckForUpdatesViewModel: ObservableObject {
+    @Published var canCheckForUpdates = false
 
-/// Placeholder for update checking functionality
-/// Replace with custom update logic when OTA updates are implemented
-struct CheckForUpdatesView: View {
-    // Empty initializer - no updater needed
-    init() {}
-    
-    var body: some View {
-        // Empty view - updates disabled
-        EmptyView()
+    init(updater: SPUUpdater) {
+        updater.publisher(for: \.canCheckForUpdates)
+            .assign(to: &$canCheckForUpdates)
     }
 }
 
-/// Placeholder for updater settings
-/// Replace with custom update settings when OTA updates are implemented
-struct UpdaterSettingsView: View {
-    // Empty initializer - no updater needed
-    init() {}
+struct CheckForUpdatesView: View {
+    @ObservedObject private var checkForUpdatesViewModel: CheckForUpdatesViewModel
+    private let updater: SPUUpdater
+    
+    init(updater: SPUUpdater) {
+        self.updater = updater
+        
+        // Create our view model for our CheckForUpdatesView
+        self.checkForUpdatesViewModel = CheckForUpdatesViewModel(updater: updater)
+    }
     
     var body: some View {
-        // Empty view - update settings disabled
-        EmptyView()
+        Button("Check for Updates…", action: updater.checkForUpdates)
+            .disabled(!checkForUpdatesViewModel.canCheckForUpdates)
+    }
+}
+
+struct UpdaterSettingsView: View {
+    private let updater: SPUUpdater
+    
+    @State private var automaticallyChecksForUpdates: Bool
+    @State private var automaticallyDownloadsUpdates: Bool
+    
+    init(updater: SPUUpdater) {
+        self.updater = updater
+        self.automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates
+        self.automaticallyDownloadsUpdates = updater.automaticallyDownloadsUpdates
+    }
+    
+    var body: some View {
+        Section {
+            Toggle("Automatically check for updates", isOn: $automaticallyChecksForUpdates)
+                .onChange(of: automaticallyChecksForUpdates) { _, newValue in
+                    updater.automaticallyChecksForUpdates = newValue
+                }
+            
+            Toggle("Automatically download updates", isOn: $automaticallyDownloadsUpdates)
+                .disabled(!automaticallyChecksForUpdates)
+                .onChange(of: automaticallyDownloadsUpdates) { _, newValue in
+                    updater.automaticallyDownloadsUpdates = newValue
+                }
+        } header: {
+            HStack {
+                Text("Software updates")
+            }
+        }
     }
 }

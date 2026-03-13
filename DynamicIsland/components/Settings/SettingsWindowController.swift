@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +22,11 @@
 
 import AppKit
 import SwiftUI
-// Sparkle removed for local-only mode - see OTA_UPDATE_GUIDE.md
+import Sparkle
 
 class SettingsWindowController: NSWindowController {
     static let shared = SettingsWindowController()
-    // Sparkle updater removed for local-only mode
+    private var updaterController: SPUStandardUpdaterController?
     
     private init() {
         let window = NSWindow(
@@ -42,22 +45,24 @@ class SettingsWindowController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // Kept for API compatibility but does nothing
-    func setUpdaterController(_ controller: Any?) {
-        // No-op: updates disabled for local-only mode
+    func setUpdaterController(_ controller: SPUStandardUpdaterController) {
+        self.updaterController = controller
+        // Recreate the content view with the proper updater controller
+        setupWindow()
     }
     
     private func setupWindow() {
         guard let window = window else { return }
         
-        window.title = "NotchApp Settings"
+        window.title = "NotchTub Settings"
         window.titlebarAppearsTransparent = false
         window.titleVisibility = .visible
         window.toolbarStyle = .unified
         window.isMovableByWindowBackground = true
+        window.level = .normal
         
         // Make it behave like a regular app window with proper Spaces support
-        window.collectionBehavior = [.managed, .participatesInCycle, .fullScreenAuxiliary]
+        window.collectionBehavior = [.managed, .participatesInCycle]
         
         // Ensure proper window behavior
         window.hidesOnDeactivate = false
@@ -67,8 +72,8 @@ class SettingsWindowController: NSWindowController {
         window.isRestorable = true
         window.identifier = NSUserInterfaceItemIdentifier("DynamicIslandSettingsWindow")
         
-        // Create the SwiftUI content (no updater needed)
-        let settingsView = SettingsView()
+        // Create the SwiftUI content
+        let settingsView = SettingsView(updaterController: updaterController)
         let hostingView = NSHostingView(rootView: settingsView)
         window.contentView = hostingView
         
@@ -81,6 +86,10 @@ class SettingsWindowController: NSWindowController {
     func showWindow() {
         // Ensure window exists
         _ = window
+
+        // Reassert regular window semantics in case any prior state mutated this window.
+        window?.level = .normal
+        window?.collectionBehavior = [.managed, .participatesInCycle]
         
         // If window is already visible, bring it to front properly
         if window?.isVisible == true {

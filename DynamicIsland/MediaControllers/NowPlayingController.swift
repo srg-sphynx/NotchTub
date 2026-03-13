@@ -2,6 +2,9 @@
  * NotchApp (DynamicIsland)
  * Copyright (C) 2026 srg-sphynx
  *
+ * 
+ * Modified and adapted for NotchApp (DynamicIsland)
+ * See NOTICE for details.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -163,6 +166,19 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         
         let pipeHandler = JSONLinesPipeHandler()
         process.standardOutput = await pipeHandler.getPipe()
+
+        // Capture stderr so framework/script errors are logged
+        let stderrPipe = Pipe()
+        process.standardError = stderrPipe
+        stderrPipe.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty,
+                  let message = String(data: data, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !message.isEmpty
+            else { return }
+            print("NowPlayingController [stderr]: \(message)")
+        }
         
         self.process = process
         self.pipeHandler = pipeHandler
@@ -198,7 +214,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         newPlaybackState.album = payload.album ?? (diff ? self.playbackState.album : "")
         newPlaybackState.duration = payload.duration ?? (diff ? self.playbackState.duration : 0)
         
-        // Match NotchTub behavior: if elapsedTime is provided use it,
+        // Match boring.notch behavior: if elapsedTime is provided use it,
         // if this update is a diff keep the previous currentTime, otherwise default to 0.
         newPlaybackState.currentTime = payload.elapsedTime ?? (diff ? self.playbackState.currentTime : 0)
 

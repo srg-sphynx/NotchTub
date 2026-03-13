@@ -20,9 +20,9 @@ import AppKit
 import Foundation
 import NotchTubExtensionKit
 
-/// Shared constants for the NotchApp extension XPC service.
+/// Shared constants for the Atoll extension XPC service.
 enum ExtensionXPCServiceConstants {
-    static let machServiceName = "com.notchapp.xpc"
+    static let machServiceName = "com.NotchTub.app.xpc"
 }
 
 @MainActor
@@ -50,14 +50,14 @@ final class ExtensionXPCServiceHost: NSObject, NSXPCListenerDelegate {
         self.listener = listener
         listener.resume()
 
-        Logger.log("Started NotchApp XPC listener", category: .extensions)
+        Logger.log("Started Atoll XPC listener", category: .extensions)
     }
 
     func stop() {
         listener?.invalidate()
         listener = nil
         clientContexts.removeAll()
-        Logger.log("Stopped NotchApp XPC listener", category: .extensions)
+        Logger.log("Stopped Atoll XPC listener", category: .extensions)
     }
 
     func listener(_ listener: NSXPCListener, shouldAcceptNewConnection connection: NSXPCConnection) -> Bool {
