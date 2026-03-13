@@ -27,7 +27,7 @@
 		7E9918722EFDAE5B002EDFD5 /* MediaRemoteAdapter.framework in Resources */ = {isa = PBXBuildFile; fileRef = F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */; };
 		7EE1D73D2E6B1E0B00997219 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */; };
 		7EE1D73F2E6B1E1200997219 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73E2E6B1E1200997219 /* IOKit.framework */; };
-		7EF1D4B92FFFCE3C008D2C32 /* ExtensionEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF1D4B82FFFCE3C008D2C32 /* ExtensionEventBridge.swift */; };
+		7EF19C172F577040005B9929 /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 7EF19C162F577040005B9929 /* SwiftTerm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +72,7 @@
 				7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */,
 				7E6118152E24071E0050006C /* Sparkle in Frameworks */,
 				7E288D122F1659EF0020C117 /* NotchTubExtensionKit in Frameworks */,
+				7EF19C172F577040005B9929 /* SwiftTerm in Frameworks */,
 				7E6118142E24071E0050006C /* LaunchAtLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -79,14 +80,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		7E07AFF12F181892003A8B1B /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				7EF1D4B82FFFCE3C008D2C32 /* ExtensionEventBridge.swift */,
-			);
-			name = "Recovered References";
-			sourceTree = "<group>";
-		};
+
 		7E81303F2E3FB40500E08F3F /* mediaremote-adapter */ = {
 			isa = PBXGroup;
 			children = (
@@ -129,7 +123,6 @@
 				7E81303F2E3FB40500E08F3F /* mediaremote-adapter */,
 				F54406E92CD4987A00C7AFD9 /* DynamicIsland */,
 				F54406E82CD4987A00C7AFD9 /* Products */,
-				7E07AFF12F181892003A8B1B /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -171,6 +164,7 @@
 				146BC4362D366E9B0047C66A /* MacroVisionKit */,
 				7E61181E2E24071E0050006C /* SkyLightWindow */,
 				7E288D112F1659EF0020C117 /* NotchTubExtensionKit */,
+				7EF19C162F577040005B9929 /* SwiftTerm */,
 			);
 			productName = DynamicIsland;
 			productReference = F54406E72CD4987A00C7AFD9 /* Atoll.app */;
@@ -216,6 +210,7 @@
 				7E61181F2E24071E0050006C /* XCRemoteSwiftPackageReference "SkyLightWindow" */,
 				7E09D5962EB7B497005AF41D /* XCRemoteSwiftPackageReference "open-meteo" */,
 				7E288D102F1659EF0020C117 /* XCRemoteSwiftPackageReference "NotchTubExtensionKit" */,
+				7EF19C152F577040005B9929 /* XCRemoteSwiftPackageReference "SwiftTerm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54406E82CD4987A00C7AFD9 /* Products */;
@@ -250,7 +245,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7EF1D4B92FFFCE3C008D2C32 /* ExtensionEventBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -637,6 +631,14 @@
 				minimumVersion = 1.1.4;
 			};
 		};
+		7EF19C152F577040005B9929 /* XCRemoteSwiftPackageReference "SwiftTerm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/migueldeicaza/SwiftTerm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -689,6 +691,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B19424072CD0DB52003E5DC2 /* XCRemoteSwiftPackageReference "LottieUI" */;
 			productName = LottieUI;
+		};
+		7EF19C162F577040005B9929 /* SwiftTerm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7EF19C152F577040005B9929 /* XCRemoteSwiftPackageReference "SwiftTerm" */;
+			productName = SwiftTerm;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
